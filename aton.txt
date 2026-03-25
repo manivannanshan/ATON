@@ -1,21 +1,78 @@
-/ Get the bounding rectangle of the dropDownPane itself
+// ── Step 1: Get item height from the FIRST list item's bounding rect ──
+    var firstItemRect = listItems[0].BoundingRectangle;
+    int itemHeight = firstItemRect.Height;
+
+    Console.WriteLine($"Item Height: {itemHeight}");
+
+    // ── Step 2: Get the visible pane rect ──
     var paneRect = dropDownPane.BoundingRectangle;
+    int visiblePaneHeight = paneRect.Height;
 
-    Console.WriteLine($"Pane X:{paneRect.X} Y:{paneRect.Y} W:{paneRect.Width} H:{paneRect.Height}");
-    Console.WriteLine($"Total items: {listItems.Length}, Target index: {targetIndex}");
+    Console.WriteLine($"Pane X:{paneRect.X} Y:{paneRect.Y} W:{paneRect.Width} H:{visiblePaneHeight}");
 
-    // Calculate each item height based on total pane height / number of items
-    double itemHeight = (double)paneRect.Height / listItems.Length;
+    // ── Step 3: Calculate how many items are visible at once ──
+    int visibleItemCount = (int)(visiblePaneHeight / itemHeight);
 
-    Console.WriteLine($"Calculated item height: {itemHeight}");
+    Console.WriteLine($"Visible items: {visibleItemCount}, Total items: {listItems.Length}, Target index: {targetIndex}");
 
-    // Calculate the center X of the pane
-    int clickX = (int)(paneRect.X + paneRect.Width / 2);
+    // ── Step 4: Calculate total scrollable height ──
+    int totalContentHeight = itemHeight * listItems.Length;
+    int totalScrollHeight   = totalContentHeight - visiblePaneHeight;
 
-    // Calculate the center Y of the target item
-    int clickY = (int)(paneRect.Y + (itemHeight * targetIndex) + (itemHeight / 2));
+    Console.WriteLine($"Total content height: {totalContentHeight}, Total scroll height: {totalScrollHeight}");
 
-    Console.WriteLine($"Clicking at X:{clickX} Y:{clickY}");
+    // ── Step 5: Check if target item is outside the visible area ──
+    if (targetIndex >= visibleItemCount)
+    {
+        // Calculate how much to scroll so target item is visible
+        // We scroll just enough to bring target item into view
+        int scrollOffset = (targetIndex - visibleItemCount + 1) * itemHeight;
 
-    // Use Windows cursor to click at the calculated position
-    FlaUI.Core.Input.Mouse.Click(new System.Drawing.Point(clickX, clickY));
+        // Clamp scrollOffset to totalScrollHeight max
+        scrollOffset = Math.Min(scrollOffset, totalScrollHeight);
+
+        Console.WriteLine($"Scrolling by offset: {scrollOffset}");
+
+        // ── Step 6: Scroll the pane using mouse wheel ──
+        // Each mouse wheel notch scrolls ~itemHeight pixels typically
+        // Calculate number of wheel scrolls needed
+        int scrollClicks = (int)Math.Ceiling((double)scrollOffset / itemHeight);
+
+        Console.WriteLine($"Scroll clicks needed: {scrollClicks}");
+
+        // Move mouse to center of pane first
+        int paneCenterX = (int)(paneRect.X + paneRect.Width / 2);
+        int paneCenterY = (int)(paneRect.Y + paneRect.Height / 2);
+        FlaUI.Core.Input.Mouse.MoveTo(new System.Drawing.Point(paneCenterX, paneCenterY));
+        Thread.Sleep(100);
+
+        // Scroll down by scrollClicks
+        for (int s = 0; s < scrollClicks; s++)
+        {
+            FlaUI.Core.Input.Mouse.Scroll(new System.Drawing.Point(paneCenterX, paneCenterY), -1);
+            Thread.Sleep(50);
+        }
+
+        Thread.Sleep(200);
+
+        // ── Step 7: After scrolling, recalculate click Y ──
+        // Target item is now at position: targetIndex - scrolledItems from top
+        int itemPositionAfterScroll = targetIndex - scrollClicks;
+        // Clamp to visible range
+        itemPositionAfterScroll = Math.Max(0, Math.Min(itemPositionAfterScroll, visibleItemCount - 1));
+
+        int clickX = (int)(paneRect.X + paneRect.Width / 2);
+        int clickY = (int)(paneRect.Y + (itemHeight * itemPositionAfterScroll) + (itemHeight / 2));
+
+        Console.WriteLine($"Clicking after scroll at X:{clickX} Y:{clickY}");
+        FlaUI.Core.Input.Mouse.Click(new System.Drawing.Point(clickX, clickY));
+    }
+    else
+    {
+        // ── Item is already visible, click directly ──
+        int clickX = (int)(paneRect.X + paneRect.Width / 2);
+        int clickY = (int)(paneRect.Y + (itemHeight * targetIndex) + (itemHeight / 2));
+
+        Console.WriteLine($"Clicking directly at X:{clickX} Y:{clickY}");
+        FlaUI.Core.Input.Mouse.Click(new System.Drawing.Point(clickX, clickY));
+    }
