@@ -1,0 +1,73 @@
+// ===== Try these approaches in order =====
+
+    // Approach 1: Scroll item into view first, then click
+    try
+    {
+        targetItem.Patterns.ScrollItem.Pattern.ScrollIntoView();
+        Thread.Sleep(200);
+        targetItem.AsListBoxItem().Click();
+        return;
+    }
+    catch { }
+
+    // Approach 2: Use invoke pattern
+    try
+    {
+        targetItem.Patterns.Invoke.Pattern.Invoke();
+        return;
+    }
+    catch { }
+
+    // Approach 3: Use SelectionItem pattern
+    try
+    {
+        targetItem.Patterns.SelectionItem.Pattern.Select();
+        return;
+    }
+    catch { }
+
+    // Approach 4: Use BoundingRectangle center point for mouse click
+    try
+    {
+        var rect = targetItem.BoundingRectangle;
+        if (!rect.IsEmpty)
+        {
+            var centerX = (int)(rect.X + rect.Width / 2);
+            var centerY = (int)(rect.Y + rect.Height / 2);
+            FlaUI.Core.Input.Mouse.Click(new System.Drawing.Point(centerX, centerY));
+            return;
+        }
+    }
+    catch { }
+
+    // Approach 5: Focus the item and press Enter
+    try
+    {
+        targetItem.Focus();
+        Thread.Sleep(100);
+        FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.RETURN);
+        return;
+    }
+    catch { }
+
+    // Approach 6: Navigate using keyboard arrow keys from first item
+    try
+    {
+        // Find index of target item
+        var itemIndex = Array.IndexOf(listItems, targetItem);
+        // Press Home to go to first item
+        FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.HOME);
+        Thread.Sleep(100);
+        // Press Down arrow to navigate to target index
+        for (int i = 0; i < itemIndex; i++)
+        {
+            FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.DOWN);
+            Thread.Sleep(50);
+        }
+        FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.RETURN);
+        return;
+    }
+    catch { }
+
+    throw new Exception($"All approaches failed to select '{targetValue}'");
+}
