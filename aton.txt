@@ -1,73 +1,21 @@
-// ===== Try these approaches in order =====
+/ Get the bounding rectangle of the dropDownPane itself
+    var paneRect = dropDownPane.BoundingRectangle;
 
-    // Approach 1: Scroll item into view first, then click
-    try
-    {
-        targetItem.Patterns.ScrollItem.Pattern.ScrollIntoView();
-        Thread.Sleep(200);
-        targetItem.AsListBoxItem().Click();
-        return;
-    }
-    catch { }
+    Console.WriteLine($"Pane X:{paneRect.X} Y:{paneRect.Y} W:{paneRect.Width} H:{paneRect.Height}");
+    Console.WriteLine($"Total items: {listItems.Length}, Target index: {targetIndex}");
 
-    // Approach 2: Use invoke pattern
-    try
-    {
-        targetItem.Patterns.Invoke.Pattern.Invoke();
-        return;
-    }
-    catch { }
+    // Calculate each item height based on total pane height / number of items
+    double itemHeight = (double)paneRect.Height / listItems.Length;
 
-    // Approach 3: Use SelectionItem pattern
-    try
-    {
-        targetItem.Patterns.SelectionItem.Pattern.Select();
-        return;
-    }
-    catch { }
+    Console.WriteLine($"Calculated item height: {itemHeight}");
 
-    // Approach 4: Use BoundingRectangle center point for mouse click
-    try
-    {
-        var rect = targetItem.BoundingRectangle;
-        if (!rect.IsEmpty)
-        {
-            var centerX = (int)(rect.X + rect.Width / 2);
-            var centerY = (int)(rect.Y + rect.Height / 2);
-            FlaUI.Core.Input.Mouse.Click(new System.Drawing.Point(centerX, centerY));
-            return;
-        }
-    }
-    catch { }
+    // Calculate the center X of the pane
+    int clickX = (int)(paneRect.X + paneRect.Width / 2);
 
-    // Approach 5: Focus the item and press Enter
-    try
-    {
-        targetItem.Focus();
-        Thread.Sleep(100);
-        FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.RETURN);
-        return;
-    }
-    catch { }
+    // Calculate the center Y of the target item
+    int clickY = (int)(paneRect.Y + (itemHeight * targetIndex) + (itemHeight / 2));
 
-    // Approach 6: Navigate using keyboard arrow keys from first item
-    try
-    {
-        // Find index of target item
-        var itemIndex = Array.IndexOf(listItems, targetItem);
-        // Press Home to go to first item
-        FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.HOME);
-        Thread.Sleep(100);
-        // Press Down arrow to navigate to target index
-        for (int i = 0; i < itemIndex; i++)
-        {
-            FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.DOWN);
-            Thread.Sleep(50);
-        }
-        FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.RETURN);
-        return;
-    }
-    catch { }
+    Console.WriteLine($"Clicking at X:{clickX} Y:{clickY}");
 
-    throw new Exception($"All approaches failed to select '{targetValue}'");
-}
+    // Use Windows cursor to click at the calculated position
+    FlaUI.Core.Input.Mouse.Click(new System.Drawing.Point(clickX, clickY));
